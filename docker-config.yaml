@@ -1,0 +1,21 @@
+server:
+  address: ":8080"
+  readTimeout: 30
+  writeTimeout: 30
+  idleTimeout: 120
+
+backends:
+  - name: "backend1"
+    url: "http://backend1:80"
+    weight: 50
+    health: "/health"
+  - name: "backend2"
+    url: "http://backend2:80"
+    weight: 50
+    health: "/health"
+
+rateLimit:
+  requestsPerMinute: 100
+  burstSize: 10
+
+logLevel: "info"

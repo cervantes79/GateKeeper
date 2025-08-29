@@ -1,0 +1,21 @@
+server:
+  address: ":8080"
+  readTimeout: 30
+  writeTimeout: 30
+  idleTimeout: 120
+
+backends:
+  - name: "api-v1"
+    url: "http://localhost:3001"
+    weight: 70
+    health: "/health"
+  - name: "api-v2"
+    url: "http://localhost:3002"
+    weight: 30
+    health: "/health"
+
+rateLimit:
+  requestsPerMinute: 100
+  burstSize: 10
+
+logLevel: "info"

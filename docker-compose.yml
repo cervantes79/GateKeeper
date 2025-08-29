@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  gatekeeper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - GATEKEEPER_ADDRESS=:8080
+      - GATEKEEPER_LOG_LEVEL=info
+      - GATEKEEPER_RATE_LIMIT=100
+      - GATEKEEPER_BURST_SIZE=10
+      - GATEKEEPER_CONFIG=/root/docker-config.yaml
+    volumes:
+      - ./logs:/root/logs
+      - ./docker-config.yaml:/root/docker-config.yaml:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - gatekeeper-network
+
+  # Example backend service
+  backend1:
+    image: nginx:alpine
+    ports:
+      - "3001:80"
+    volumes:
+      - ./examples/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - gatekeeper-network
+
+  backend2:
+    image: nginx:alpine  
+    ports:
+      - "3002:80"
+    volumes:
+      - ./examples/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - gatekeeper-network
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - gatekeeper-network
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./monitoring/grafana:/etc/grafana/provisioning
+    networks:
+      - gatekeeper-network
+
+networks:
+  gatekeeper-network:
+    driver: bridge
+
+volumes:
+  grafana-storage:
